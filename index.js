@@ -18,6 +18,15 @@ app.listen(4000, () => {
     console.log('listening on port 4000');
 })
 
+app.post('/getImg', async(req,res)=> {
+    const url = req.body.url;
+    Parser.parse(`${url}`).then(result=>{
+        // console.log(result);
+        let obj = {"imageUrl": result.lead_image_url}
+        res.send(obj);
+    });
+})
+
 app.post('/smartRead', async (req, res) => {
     const url = req.body.url
     Parser.parse(`${url}`)
