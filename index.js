@@ -4,6 +4,10 @@ var Parser = require('@postlight/parser');
 var natural = require('natural');
 var express = require('express');
 var cors = require('cors');
+const { CohereClient } = require("cohere-ai");
+const cohere = new CohereClient({
+    token: "ZtNvYYoLXeBcTdu88YDwLUR9oiY1nE8xmHQTbxIz",
+});
 
 var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json()
@@ -28,59 +32,71 @@ app.post('/getImg', async(req,res)=> {
 })
 
 app.post('/smartRead', async (req, res) => {
-    const url = req.body.url
-    Parser.parse(`${url}`)
-        .then(result => {
-            result.content = result.content.replace(/<[^>]*>?/gm, '');
-            result.content = result.content.replace(/&apos;/g, '\'')
-            result.content = result.content.replace(/&quot;/g, '"');
-            result.content = result.content.replace(/&#xA0;/g, ' ')
-            result.content = result.content.replace(/&amp;/g, '&')
-            result.content = result.content.replace(/&#x201C;/g, '"')
-            result.content = result.content.replace(/&#x201D;/g, '"')
-            result.content = result.content.replace(/&#x2019;/g, "'")
-            result.content = result.content.replace(/&#x2013;/g, "-")
-            result.content = result.content.replace(/&#x2026;/g, "...")
-            result.content = result.content.replace(/&#x2C6;/g, "^");
-            result.content = result.content.replace(/&#x2DC;/g, "~");
-            result.content = result.content.replace(/&#x2002;/g, " ");
-            result.content = result.content.replace(/&#x2003;/g, " ");
-            result.content = result.content.replace(/&#x2009;/g, " ");
-            result.content = result.content.replace(/&#x200C;/g, " ");
-            result.content = result.content.replace(/&#x200D;/g, " ");
-            result.content = result.content.replace(/&#x200E;/g, " ");
-            result.content = result.content.replace(/&#x200F;/g, " ");
-            result.content = result.content.replace(/&#x2014;/g, "--");
-            result.content = result.content.replace(/&#x2018;/g, "'");
-            result.content = result.content.replace(/&#x201A;/g, "‚");
-            result.content = result.content.replace(/&#x201E;/g, ",,");
-            result.content = result.content.replace(/&#x2039;/g, "<");
-            result.content = result.content.replace(/&#x203A;/g, ">");
-            result.content = result.content.replace(/&#x20B9;/g, "₹");
-            let list = tokenizer.tokenize(result.content);
-            let sentences = senTokenizer.tokenize(result.content);
-            let filteredList = list.filter(l => !stopWords.includes(l));
-            let score = {};
-            for (let l of filteredList) {
-                if (score.hasOwnProperty(l)) {
-                    score[l] = score[l] + 1;
-                }
-                else {
-                    score[l] = 1;
-                }
-            }
-            let topWords = Object.entries(score).sort((a, b) => b[1] - a[1]).map(el => el[0]).slice(0, 10);
-            let sentenceScore = {};
-            for (let s of sentences) {
-                sentenceScore[s] = 0;
-                for (let t of topWords) {
-                    if (s.includes(t)) {
-                        sentenceScore[s] += 1;
-                    }
-                }
-            }
-            let topSentences = Object.entries(sentenceScore).sort((a, b) => b[1] - a[1]).map(el => el[0]).slice(0, 5);
-            res.send(topSentences);
-
+    const url = req.body.url;
+    Parser.parse(url)
+        .then(async (result) => {
+            let summary = await cohere.summarize({
+                text: result.content
+            });
+            let sentences = senTokenizer.tokenize(summary);
+            res.send(sentences);
         });
 });
+
+// app.post('/smartRead', async (req, res) => {
+//     const url = req.body.url
+//     Parser.parse(`${url}`)
+//         .then(result => {
+//             result.content = result.content.replace(/<[^>]*>?/gm, '');
+//             result.content = result.content.replace(/&apos;/g, '\'')
+//             result.content = result.content.replace(/&quot;/g, '"');
+//             result.content = result.content.replace(/&#xA0;/g, ' ')
+//             result.content = result.content.replace(/&amp;/g, '&')
+//             result.content = result.content.replace(/&#x201C;/g, '"')
+//             result.content = result.content.replace(/&#x201D;/g, '"')
+//             result.content = result.content.replace(/&#x2019;/g, "'")
+//             result.content = result.content.replace(/&#x2013;/g, "-")
+//             result.content = result.content.replace(/&#x2026;/g, "...")
+//             result.content = result.content.replace(/&#x2C6;/g, "^");
+//             result.content = result.content.replace(/&#x2DC;/g, "~");
+//             result.content = result.content.replace(/&#x2002;/g, " ");
+//             result.content = result.content.replace(/&#x2003;/g, " ");
+//             result.content = result.content.replace(/&#x2009;/g, " ");
+//             result.content = result.content.replace(/&#x200C;/g, " ");
+//             result.content = result.content.replace(/&#x200D;/g, " ");
+//             result.content = result.content.replace(/&#x200E;/g, " ");
+//             result.content = result.content.replace(/&#x200F;/g, " ");
+//             result.content = result.content.replace(/&#x2014;/g, "--");
+//             result.content = result.content.replace(/&#x2018;/g, "'");
+//             result.content = result.content.replace(/&#x201A;/g, "‚");
+//             result.content = result.content.replace(/&#x201E;/g, ",,");
+//             result.content = result.content.replace(/&#x2039;/g, "<");
+//             result.content = result.content.replace(/&#x203A;/g, ">");
+//             result.content = result.content.replace(/&#x20B9;/g, "₹");
+//             let list = tokenizer.tokenize(result.content);
+//             let sentences = senTokenizer.tokenize(result.content);
+//             let filteredList = list.filter(l => !stopWords.includes(l));
+//             let score = {};
+//             for (let l of filteredList) {
+//                 if (score.hasOwnProperty(l)) {
+//                     score[l] = score[l] + 1;
+//                 }
+//                 else {
+//                     score[l] = 1;
+//                 }
+//             }
+//             let topWords = Object.entries(score).sort((a, b) => b[1] - a[1]).map(el => el[0]).slice(0, 10);
+//             let sentenceScore = {};
+//             for (let s of sentences) {
+//                 sentenceScore[s] = 0;
+//                 for (let t of topWords) {
+//                     if (s.includes(t)) {
+//                         sentenceScore[s] += 1;
+//                     }
+//                 }
+//             }
+//             let topSentences = Object.entries(sentenceScore).sort((a, b) => b[1] - a[1]).map(el => el[0]).slice(0, 5);
+//             res.send(topSentences);
+
+//         });
+// });
