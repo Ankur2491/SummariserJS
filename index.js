@@ -35,10 +35,10 @@ app.post('/smartRead', async (req, res) => {
     const url = req.body.url;
     Parser.parse(url)
         .then(async (result) => {
-            let summary = await cohere.summarize({
+            let summaryObj = await cohere.summarize({
                 text: result.content
             });
-            let sentences = senTokenizer.tokenize(summary);
+            let sentences = senTokenizer.tokenize(summaryObj.summary);
             res.send(sentences);
         });
 });
