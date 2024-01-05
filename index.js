@@ -36,7 +36,8 @@ app.post('/smartRead', async (req, res) => {
     Parser.parse(url)
         .then(async (result) => {
             let summaryObj = await cohere.summarize({
-                text: result.content
+                text: result.content,
+                model:'command-light'
             });
             let sentences = senTokenizer.tokenize(summaryObj.summary);
             res.send(sentences);
